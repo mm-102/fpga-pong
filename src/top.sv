@@ -12,7 +12,7 @@ module top (
     localparam SCORE_DIGITS = 2;
 
     localparam PADDLE_LEFT_X = 3200;
-    localparam PADDLE_RIGHT_X = 36736;
+    localparam PADDLE_RIGHT_X = 37248;
 
     wire clk_serial; // 371.25 MHz for dvi
     wire clk_pixel;  // 74.25 MHz
@@ -40,7 +40,7 @@ module top (
     wire hsync, vsync, de;
     wire [CHANNEL_BITS-1:0] r, g, b;
 
-    // paddle 32 x 128
+    // paddle 16 x 96
     // ball 32 x 32
 
     display #(
@@ -55,8 +55,8 @@ module top (
         .I_rst_n(sys_rst_n),
         
         // TODO game logic
-        .I_paddle_left_y(GAME_H_BITS'(9472)),
-        .I_paddle_right_y(GAME_H_BITS'(9472)),
+        .I_paddle_left_y(GAME_H_BITS'(9984)),
+        .I_paddle_right_y(GAME_H_BITS'(9984)),
         .I_ball_x(GAME_W_BITS'(19968)),
         .I_ball_y(GAME_H_BITS'(11008)),
 

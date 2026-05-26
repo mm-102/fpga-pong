@@ -6,15 +6,13 @@ module composer #( // takes all coords in screen space!
     parameter SCREEN_H_BITS = 11,
     parameter SCORE_DIGITS  = 2,
     parameter PADDLE_LEFT_X = 100,
-    parameter PADDLE_RIGHT_X = 1148
+    parameter PADDLE_RIGHT_X = 1164
 )(
     input wire I_clk_pixel,
     input wire I_rst_n,
     input wire [SCREEN_W_BITS-1:0] I_x,
     input wire [SCREEN_H_BITS-1:0] I_y,
-    input wire [SCREEN_W_BITS-1:0] I_paddle_left_x,
     input wire [SCREEN_H_BITS-1:0] I_paddle_left_y,
-    input wire [SCREEN_W_BITS-1:0] I_paddle_right_x,
     input wire [SCREEN_H_BITS-1:0] I_paddle_right_y,
     input wire [SCREEN_W_BITS-1:0] I_ball_x,
     input wire [SCREEN_H_BITS-1:0] I_ball_y,
@@ -48,9 +46,50 @@ module composer #( // takes all coords in screen space!
     end
 
 
+    // paddle left
+    wire [PALETTE_SIZE_BITS-1:0] p_l_idx;
+    wire p_l_en;
+    sprite_paddle #(
+        .FILE("data/paddle_left.hex"),
+        .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
+        .PADDLE_X(PADDLE_LEFT_X),
+        .SCREEN_W_BITS(SCREEN_W_BITS),
+        .SCREEN_H_BITS(SCREEN_H_BITS)
+    ) paddle_left (
+        .I_clk_pixel(I_clk_pixel),
+        .I_rst_n(I_rst_n),
+        .I_screen_x(I_x),
+        .I_screen_y(I_y),
+        .I_new_pos_y(I_paddle_left_y),
+        .O_color_idx(p_l_idx),
+        .O_color_en(p_l_en)
+    );
+
+    // paddle right
+    wire [PALETTE_SIZE_BITS-1:0] p_r_idx;
+    wire p_r_en;
+    sprite_paddle #(
+        .FILE("data/paddle_right.hex"),
+        .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
+        .PADDLE_X(PADDLE_RIGHT_X),
+        .SCREEN_W_BITS(SCREEN_W_BITS),
+        .SCREEN_H_BITS(SCREEN_H_BITS)
+    ) paddle_right (
+        .I_clk_pixel(I_clk_pixel),
+        .I_rst_n(I_rst_n),
+        .I_screen_x(I_x),
+        .I_screen_y(I_y),
+        .I_new_pos_y(I_paddle_right_y),
+        .O_color_idx(p_r_idx),
+        .O_color_en(p_r_en)
+    );
+
+
     // assign final color
     always @(*) begin
-        if (border_d[1]) O_pixel_color_idx = PALETTE_SIZE_BITS'(1);
+        if (p_l_en) O_pixel_color_idx = p_l_idx;
+        else if (p_r_en) O_pixel_color_idx = p_r_idx;
+        else if (border_d[1]) O_pixel_color_idx = PALETTE_SIZE_BITS'(1);
         else O_pixel_color_idx = PALETTE_SIZE_BITS'(0);
     end
 

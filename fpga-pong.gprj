@@ -9,6 +9,7 @@
         <File path="src/display/display.sv" type="file.verilog" enable="1"/>
         <File path="src/display/multi_sprite_sync_rom.sv" type="file.verilog" enable="1"/>
         <File path="src/display/palette_rom.sv" type="file.verilog" enable="1"/>
+        <File path="src/display/sprite_paddle.sv" type="file.verilog" enable="1"/>
         <File path="src/display/sprite_sync_coord.sv" type="file.verilog" enable="1"/>
         <File path="src/display/sprite_sync_rom.sv" type="file.verilog" enable="1"/>
         <File path="src/display/timing.sv" type="file.verilog" enable="1"/>
@@ -17,6 +18,10 @@
         <File path="src/top.sv" type="file.verilog" enable="1"/>
         <File path="src/fpga-pong.cst" type="file.cst" enable="1"/>
         <File path="src/fpga-pong.sdc" type="file.sdc" enable="1"/>
+        <File path="src/data/ball.hex" type="file.other" enable="1"/>
+        <File path="src/data/gen.py" type="file.other" enable="1"/>
+        <File path="src/data/paddle_left.hex" type="file.other" enable="1"/>
+        <File path="src/data/paddle_right.hex" type="file.other" enable="1"/>
         <File path="src/data/palette.hex" type="file.other" enable="1"/>
     </FileList>
 </Project>
