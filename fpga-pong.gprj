@@ -9,6 +9,8 @@
         <File path="src/display/display.sv" type="file.verilog" enable="1"/>
         <File path="src/display/multi_sprite_sync_rom.sv" type="file.verilog" enable="1"/>
         <File path="src/display/palette_rom.sv" type="file.verilog" enable="1"/>
+        <File path="src/display/sprite_ball.sv" type="file.verilog" enable="1"/>
+        <File path="src/display/sprite_bcd.sv" type="file.verilog" enable="1"/>
         <File path="src/display/sprite_paddle.sv" type="file.verilog" enable="1"/>
         <File path="src/display/sprite_sync_coord.sv" type="file.verilog" enable="1"/>
         <File path="src/display/sprite_sync_rom.sv" type="file.verilog" enable="1"/>

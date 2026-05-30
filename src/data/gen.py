@@ -9,6 +9,10 @@ PADDLE_H = 96
 CORNER_RADIUS = 6
 BORDER_THICKNESS = 2
 
+# Digit Sizes
+DIGIT_W = 32
+DIGIT_H = 64
+
 # Colors (RGB, 0-255 scale - will be downsampled automatically if using 4-bit)
 COLOR_BG    = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
@@ -16,11 +20,11 @@ COLOR_WHITE = (255, 255, 255)
 # Ball Colors
 BALL_BASE_COLOR = (255, 100, 100) # Soft Red
 
-# Paddle 1 Colors (Left)
+# Paddle 1 & Digits Colors (Left)
 P1_INNER_COLOR  = (100, 255, 100) # Light Green
 P1_BORDER_COLOR = (0, 150, 0)     # Dark Green
 
-# Paddle 2 Colors (Right)
+# Paddle 2 & Digits Colors (Right)
 P2_INNER_COLOR  = (100, 150, 255) # Light Blue
 P2_BORDER_COLOR = (0, 50, 180)    # Dark Blue
 
@@ -41,14 +45,14 @@ def generate_palette():
     pal.append(blend_color(BALL_BASE_COLOR, COLOR_BG, 0.7))
     pal.append(blend_color(BALL_BASE_COLOR, COLOR_BG, 0.9))
     
-    # Paddle 1 (Indices 6 to 10)
+    # Paddle 1 / Digits 1 (Indices 6 to 10)
     pal.append(P1_INNER_COLOR)
     pal.append(P1_BORDER_COLOR)
     pal.append(blend_color(P1_BORDER_COLOR, COLOR_BG, 0.4))
     pal.append(blend_color(P1_BORDER_COLOR, COLOR_BG, 0.7))
     pal.append(blend_color(P1_BORDER_COLOR, COLOR_BG, 0.9))
 
-    # Paddle 2 (Indices 11 to 15)
+    # Paddle 2 / Digits 2 (Indices 11 to 15)
     pal.append(P2_INNER_COLOR)
     pal.append(P2_BORDER_COLOR)
     pal.append(blend_color(P2_BORDER_COLOR, COLOR_BG, 0.4))
@@ -89,6 +93,76 @@ def get_paddle_pixel(x, y, w, h, base_idx):
     elif dist <= 1.2:                   return base_idx + 4  # AA3
     else:                               return 0             # BG
 
+# ==========================================
+# DIGIT GENERATION (7-Segment SDF)
+# ==========================================
+def sd_line(px, py, ax, ay, bx, by):
+    """Signed distance from point (px, py) to line segment (ax, ay)->(bx, by)"""
+    pa_x, pa_y = px - ax, py - ay
+    ba_x, ba_y = bx - ax, by - ay
+    
+    if ba_x == 0 and ba_y == 0:
+        return math.hypot(pa_x, pa_y)
+        
+    h = max(0.0, min(1.0, (pa_x * ba_x + pa_y * ba_y) / (ba_x * ba_x + ba_y * ba_y)))
+    dx = pa_x - h * ba_x
+    dy = pa_y - h * ba_y
+    return math.hypot(dx, dy)
+
+def get_digit_pixel(x, y, base_idx):
+    """Calculates SDF for a 7-segment digit and applies the palette index"""
+    digit = y // DIGIT_H
+    local_y = y % DIGIT_H
+    
+    if digit > 9:
+        return 0
+        
+    # Coordinates for the 7 segments (designed for a 32x64 box, slightly inset)
+    segments = [
+        (8, 6, 24, 6),     # 0: A (Top)
+        (26, 8, 26, 30),   # 1: B (Top Right)
+        (26, 34, 26, 56),  # 2: C (Bottom Right)
+        (8, 58, 24, 58),   # 3: D (Bottom)
+        (6, 34, 6, 56),    # 4: E (Bottom Left)
+        (6, 8, 6, 30),     # 5: F (Top Left)
+        (8, 32, 24, 32)    # 6: G (Middle)
+    ]
+    
+    digit_map = {
+        0: [0, 1, 2, 3, 4, 5],
+        1: [1, 2],
+        2: [0, 1, 6, 4, 3],
+        3: [0, 1, 6, 2, 3],
+        4: [5, 6, 1, 2],
+        5: [0, 5, 6, 2, 3],
+        6: [0, 5, 6, 4, 2, 3],
+        7: [0, 1, 2],
+        8: [0, 1, 2, 3, 4, 5, 6],
+        9: [0, 1, 2, 3, 5, 6]
+    }
+    
+    # Calculate distance to the closest active segment
+    min_dist = float('inf')
+    for seg_idx in digit_map[digit]:
+        ax, ay, bx, by = segments[seg_idx]
+        dist = sd_line(x, local_y, ax, ay, bx, by)
+        min_dist = min(min_dist, dist)
+        
+    # Subtract radius (thickness of the segments)
+    segment_radius = 4.0 
+    final_dist = min_dist - segment_radius
+    
+    # Apply exact same aesthetic mapping as paddles
+    if final_dist <= -BORDER_THICKNESS - 0.5: return base_idx      # Inner
+    elif final_dist <= -0.5:                  return base_idx + 1  # Border
+    elif final_dist <= 0.1:                   return base_idx + 2  # AA1
+    elif final_dist <= 0.6:                   return base_idx + 3  # AA2
+    elif final_dist <= 1.2:                   return base_idx + 4  # AA3
+    else:                                     return 0             # BG
+
+# ==========================================
+# FILE I/O
+# ==========================================
 def save_sprite(filename, w, h, pixel_func, *args):
     """Generates the sprite and saves to a hex text file"""
     with open(filename, 'w') as f:
@@ -105,14 +179,11 @@ def save_palette_hex(filename, pal, bits_per_channel):
     with open(filename, 'w') as f:
         for color in pal:
             if bits_per_channel == 8:
-                # 24-bit format (e.g., FFFFFF)
                 hex_color = f"{color[0]:02X}{color[1]:02X}{color[2]:02X}"
             elif bits_per_channel == 4:
-                # 12-bit format (e.g., FFF) - bitshift by 4 to map 0-255 to 0-15
                 hex_color = f"{color[0]>>4:1X}{color[1]>>4:1X}{color[2]>>4:1X}"
             else:
                 raise ValueError("Only 4 or 8 bits per channel are supported.")
-            
             f.write(f"{hex_color}\n")
     print(f"Saved {filename} ({bits_per_channel}-bits per channel)")
 
@@ -123,8 +194,13 @@ if __name__ == "__main__":
     palette = generate_palette()
     save_palette_hex("palette.hex", palette, BITS_PER_CHANNEL)
     
+    # Original sprites
     save_sprite("ball.hex", BALL_SIZE, BALL_SIZE, get_ball_pixel, BALL_SIZE)
     save_sprite("paddle_left.hex", PADDLE_W, PADDLE_H, get_paddle_pixel, PADDLE_W, PADDLE_H, 6)
     save_sprite("paddle_right.hex", PADDLE_W, PADDLE_H, get_paddle_pixel, PADDLE_W, PADDLE_H, 11)
+    
+    # Stacked Digits 0-9 (Height = 64 * 10 = 640)
+    save_sprite("digits_left.hex", DIGIT_W, DIGIT_H * 10, get_digit_pixel, 6)
+    save_sprite("digits_right.hex", DIGIT_W, DIGIT_H * 10, get_digit_pixel, 11)
     
     print("\nAll ROM files generated successfully!")

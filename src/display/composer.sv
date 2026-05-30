@@ -5,6 +5,10 @@ module composer #( // takes all coords in screen space!
     parameter SCREEN_H      = 720,
     parameter SCREEN_H_BITS = 11,
     parameter SCORE_DIGITS  = 2,
+    parameter SCORE_NUM_DIGITS_BITS = 1,
+    parameter SCORE_LEFT_X = 528,
+    parameter SCORE_RIGHT_X = 656,
+    parameter SCORE_Y = 50,
     parameter PADDLE_LEFT_X = 100,
     parameter PADDLE_RIGHT_X = 1164
 )(
@@ -84,12 +88,76 @@ module composer #( // takes all coords in screen space!
         .O_color_en(p_r_en)
     );
 
+    //ball
+    wire [PALETTE_SIZE_BITS-1:0] ball_idx;
+    wire ball_en;
+    sprite_ball #(
+        .FILE("data/ball.hex"),
+        .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
+        .SCREEN_W_BITS(SCREEN_W_BITS),
+        .SCREEN_H_BITS(SCREEN_H_BITS)
+    ) ball (
+        .I_clk_pixel(I_clk_pixel),
+        .I_rst_n(I_rst_n),
+        .I_screen_x(I_x),
+        .I_screen_y(I_y),
+        .I_new_pos_x(I_ball_x),
+        .I_new_pos_y(I_ball_y),
+        .O_color_idx(ball_idx),
+        .O_color_en(ball_en)
+    );
+
+    //score left
+    wire [PALETTE_SIZE_BITS-1:0] score_left_idx;
+    wire score_left_en;
+    sprite_bcd #(
+        .FILE("data/digits_left.hex"),
+        .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
+        .BCD_X(SCORE_LEFT_X),
+        .BCD_Y(SCORE_Y),
+        .NUM_DIGITS(SCORE_DIGITS),
+        .NUM_DIGITS_BITS(SCORE_NUM_DIGITS_BITS),
+        .SCREEN_W_BITS(SCREEN_W_BITS),
+        .SCREEN_H_BITS(SCREEN_H_BITS)
+    ) score_left (
+        .I_clk_pixel(I_clk_pixel),
+        .I_rst_n(I_rst_n),
+        .I_screen_x(I_x),
+        .I_screen_y(I_y),
+        .I_new_bcd(I_bcd_score_left),
+        .O_color_idx(score_left_idx),
+        .O_color_en(score_left_en)
+    );
+
+    //score right
+    wire [PALETTE_SIZE_BITS-1:0] score_right_idx;
+    wire score_right_en;
+    sprite_bcd #(
+        .FILE("data/digits_right.hex"),
+        .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
+        .BCD_X(SCORE_RIGHT_X),
+        .BCD_Y(SCORE_Y),
+        .NUM_DIGITS(SCORE_DIGITS),
+        .NUM_DIGITS_BITS(SCORE_NUM_DIGITS_BITS),
+        .SCREEN_W_BITS(SCREEN_W_BITS),
+        .SCREEN_H_BITS(SCREEN_H_BITS)
+    ) score_right (
+        .I_clk_pixel(I_clk_pixel),
+        .I_rst_n(I_rst_n),
+        .I_screen_x(I_x),
+        .I_screen_y(I_y),
+        .I_new_bcd(I_bcd_score_right),
+        .O_color_idx(score_right_idx),
+        .O_color_en(score_right_en)
+    );
 
     // assign final color
     always @(*) begin
-        if (p_l_en) O_pixel_color_idx = p_l_idx;
+        if(border_d[1]) O_pixel_color_idx = PALETTE_SIZE_BITS'(1);
+        else if (p_l_en || p_r_en) O_pixel_color_idx = p_l_idx | p_r_idx;
         else if (p_r_en) O_pixel_color_idx = p_r_idx;
-        else if (border_d[1]) O_pixel_color_idx = PALETTE_SIZE_BITS'(1);
+        else if (ball_en) O_pixel_color_idx = ball_idx;
+        else if (score_left_en || score_right_en) O_pixel_color_idx = score_left_idx | score_right_idx;
         else O_pixel_color_idx = PALETTE_SIZE_BITS'(0);
     end
 

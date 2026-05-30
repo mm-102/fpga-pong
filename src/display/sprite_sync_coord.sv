@@ -1,5 +1,6 @@
 module sprite_sync_coord #(
     parameter SCREEN_W_BITS = 11,
+    parameter SCREEN_H_BITS = 11,
     parameter SPRITE_W      = 32, 
     parameter SPRITE_H      = 32,
     parameter ROM_X_BITS    = 5,
@@ -7,9 +8,9 @@ module sprite_sync_coord #(
 )(
     input  wire                     I_clk,
     input  wire [SCREEN_W_BITS-1:0] I_pixel_x,
-    input  wire [SCREEN_W_BITS-1:0] I_pixel_y,
+    input  wire [SCREEN_H_BITS-1:0] I_pixel_y,
     input  wire [SCREEN_W_BITS-1:0] I_sprite_x,
-    input  wire [SCREEN_W_BITS-1:0] I_sprite_y,
+    input  wire [SCREEN_H_BITS-1:0] I_sprite_y,
     
     output reg  [ROM_X_BITS-1:0]    O_rom_x,
     output reg  [ROM_Y_BITS-1:0]    O_rom_y,
@@ -17,7 +18,7 @@ module sprite_sync_coord #(
 );
 
     wire [SCREEN_W_BITS-1:0] right_edge  = I_sprite_x + SPRITE_W;
-    wire [SCREEN_W_BITS-1:0] bottom_edge = I_sprite_y + SPRITE_H;
+    wire [SCREEN_H_BITS-1:0] bottom_edge = I_sprite_y + SPRITE_H;
 
     always @(posedge I_clk) begin
         if ((I_pixel_x >= I_sprite_x) && (I_pixel_x < right_edge) &&

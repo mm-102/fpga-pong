@@ -3,6 +3,10 @@ module display #( // takes all coords in game space!
     parameter GAME_W_BITS   = 16,
     parameter GAME_H_BITS   = 16,
     parameter SCORE_DIGITS  = 2,
+    parameter SCORE_NUM_DIGITS_BITS = 1,
+    parameter SCORE_LEFT_X = 16896,
+    parameter SCORE_RIGHT_X = 20992,
+    parameter SCORE_Y = 1600,
     parameter PADDLE_LEFT_X = 3200,
     parameter PADDLE_RIGHT_X = 36736
 )(
@@ -32,9 +36,6 @@ module display #( // takes all coords in game space!
     localparam SCREEN_H      = 720;
     localparam SCREEN_H_BITS = 11; // for simplicity
 
-    localparam COORD_SHIFT_X = GAME_W_BITS - SCREEN_W_BITS;
-    localparam COORD_SHIFT_Y = GAME_H_BITS - SCREEN_H_BITS;
-
     wire hsync_raw, vsync_raw, de_raw;
 
     wire [SCREEN_W_BITS-1:0] screen_x;
@@ -54,6 +55,9 @@ module display #( // takes all coords in game space!
 
     localparam [SCREEN_W_BITS-1:0] P_LEFT_X = PADDLE_LEFT_X[GAME_W_BITS-1 -: SCREEN_W_BITS];
     localparam [SCREEN_W_BITS-1:0] P_RIGHT_X = PADDLE_RIGHT_X[GAME_W_BITS-1 -: SCREEN_W_BITS];
+    localparam [SCREEN_W_BITS-1:0] S_LEFT_X = SCORE_LEFT_X[GAME_W_BITS-1 -: SCREEN_W_BITS];
+    localparam [SCREEN_W_BITS-1:0] S_RIGHT_X = SCORE_RIGHT_X[GAME_W_BITS-1 -: SCREEN_W_BITS];
+    localparam [SCREEN_H_BITS-1:0] S_Y = SCORE_Y[GAME_H_BITS-1 -: SCREEN_H_BITS];
 
     composer #(
         .PALETTE_SIZE_BITS(PALETTE_SIZE_BITS),
@@ -62,6 +66,10 @@ module display #( // takes all coords in game space!
         .SCREEN_H(SCREEN_H),
         .SCREEN_H_BITS(SCREEN_H_BITS),
         .SCORE_DIGITS(SCORE_DIGITS),
+        .SCORE_NUM_DIGITS_BITS(SCORE_NUM_DIGITS_BITS),
+        .SCORE_LEFT_X(S_LEFT_X),
+        .SCORE_RIGHT_X(S_RIGHT_X),
+        .SCORE_Y(S_Y),
         .PADDLE_LEFT_X(P_LEFT_X),
         .PADDLE_RIGHT_X(P_RIGHT_X)
     ) composer_inst (
