@@ -16,6 +16,9 @@
         <File path="src/display/sprite_sync_rom.sv" type="file.verilog" enable="1"/>
         <File path="src/display/timing.sv" type="file.verilog" enable="1"/>
         <File path="src/dvi_tx/dvi_tx.v" type="file.verilog" enable="1"/>
+        <File path="src/game/bcd_cntr.sv" type="file.verilog" enable="1"/>
+        <File path="src/game/bcd_cntr_n.sv" type="file.verilog" enable="1"/>
+        <File path="src/game/game.sv" type="file.verilog" enable="1"/>
         <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
         <File path="src/top.sv" type="file.verilog" enable="1"/>
         <File path="src/fpga-pong.cst" type="file.cst" enable="1"/>

@@ -43,39 +43,43 @@ module top (
     defparam u_clkdiv.GSREN = "false";
 
     
-    
+    wire [GAME_W_BITS-1:0] ball_x;
+    wire [GAME_H_BITS-1:0] ball_y;
+    wire [GAME_H_BITS-1:0] paddle_left_y;
+    wire [GAME_H_BITS-1:0] paddle_right_y;
 
-    // temp
-    localparam BASE_SPEED_X = 12;
-    localparam BASE_SPEED_Y = 3;
-    reg [GAME_W_BITS-1:0] speed_x = GAME_W_BITS'(BASE_SPEED_X);
-    reg [GAME_W_BITS-1:0] speed_y = GAME_W_BITS'(BASE_SPEED_Y);
-    reg [GAME_W_BITS-1:0] ball_x = GAME_W_BITS'(19968);
-    reg [GAME_H_BITS-1:0] ball_y = GAME_H_BITS'(11008);
-    reg [16:0] div;
-
-    always @(posedge clk_pixel or negedge sys_rst_n) begin
-        if (!sys_rst_n) begin
-            ball_x <= GAME_W_BITS'(19968);
-            ball_y <= GAME_H_BITS'(11008);
-        end else if (clk_pixel) begin
-            div <= div + 1;
-            if (div == 16'b0) begin
-                if (ball_x < (10 << 5)) speed_x <= BASE_SPEED_X;
-                else if (ball_x > (1238 << 5)) speed_x <= -BASE_SPEED_X;
-
-                if (ball_y < (10 << 5)) speed_y <= BASE_SPEED_Y;
-                else if (ball_y > (678 << 5)) speed_y <= -BASE_SPEED_Y;
-
-                ball_x <= ball_x + speed_x;
-                ball_y <= ball_y + speed_y;
-            end
-        end
-    end
-
+    wire [(4*SCORE_DIGITS)-1:0] bcd_score_left;
+    wire [(4*SCORE_DIGITS)-1:0] bcd_score_right;
 
     wire hsync, vsync, de;
     wire [CHANNEL_BITS-1:0] r, g, b;
+
+    game #(
+        .GAME_W_BITS(GAME_W_BITS),
+        .GAME_H_BITS(GAME_H_BITS),
+        .SCORE_DIGITS(SCORE_DIGITS),
+        .BALL_RESET_X((640 - 16) << 5),
+        .BALL_RESET_Y((360 - 16) << 5),
+        .BALL_SIZE(32 << 5),
+        .PADDLE_RESET_Y((360 - 48) << 5),
+        .PADDLE_BORDER_LEFT(PADDLE_LEFT_X + (16 << 5)),
+        .PADDLE_BORDER_RIGHT(PADDLE_RIGHT_X),
+        .PADDLE_SIZE(96 << 5),
+        .BORDER_TOP(10 << 5),
+        .BORDER_BOTTOM(710 << 5)
+    ) game_inst (
+        .I_clk(clk_pixel),
+        .I_rst_n(sys_rst_n),
+        .I_start(vsync), // start processing frame when nothing is drawn
+        .O_paddle_left_y(paddle_left_y),
+        .O_paddle_right_y(paddle_right_y),
+        .O_ball_x(ball_x),
+        .O_ball_y(ball_y),
+        .O_bcd_score_left(bcd_score_left),
+        .O_bcd_score_right(bcd_score_right)
+    );
+
+
 
     // paddle 16 x 96
     // ball 32 x 32
@@ -95,16 +99,13 @@ module top (
         .I_clk_pixel(clk_pixel),
         .I_rst_n(sys_rst_n),
         
-        // TODO game logic
-        .I_paddle_left_y(GAME_H_BITS'(9984)),
-        .I_paddle_right_y(GAME_H_BITS'(9984)),
-        //.I_ball_x(GAME_W_BITS'(19968)),
-        //.I_ball_y(GAME_H_BITS'(11008)),
+        .I_paddle_left_y(paddle_left_y),
+        .I_paddle_right_y(paddle_right_y),
         .I_ball_x(ball_x),
         .I_ball_y(ball_y),
 
-        .I_bcd_score_left(12'h123),
-        .I_bcd_score_right(12'h789),
+        .I_bcd_score_left(bcd_score_left),
+        .I_bcd_score_right(bcd_score_right),
 
         .O_hsync(hsync),
         .O_vsync(vsync),
