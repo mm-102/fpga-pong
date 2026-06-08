@@ -1,5 +1,10 @@
 module top (
     input  wire I_clk_27m,
+    input wire I_enc1_a,
+    input wire I_enc1_b,
+    input wire I_enc2_a,
+    input wire I_enc2_b,
+    input wire I_rst_p,
     output wire O_tmds_clk_p,
     output wire O_tmds_clk_n,
     output wire [2:0] O_tmds_d_p,
@@ -31,6 +36,7 @@ module top (
     );
 
     wire sys_rst_n = pll_lock;
+    wire game_rst_n = sys_rst_n & !I_rst_p;
 
 
     CLKDIV u_clkdiv (
@@ -54,6 +60,28 @@ module top (
     wire hsync, vsync, de;
     wire [CHANNEL_BITS-1:0] r, g, b;
 
+    wire enc1_tick_cw;
+    wire enc1_tick_ccw;
+    rotary_encoder enc1_inst (
+        .I_clk(clk_pixel),
+        .I_rst_n(game_rst_n),
+        .I_a(I_enc1_a),
+        .I_b(I_enc1_b),
+        .O_tick_cw(enc1_tick_cw),
+        .O_tick_ccw(enc1_tick_ccw)
+    );
+
+    wire enc2_tick_cw;
+    wire enc2_tick_ccw;
+    rotary_encoder enc2_inst (
+        .I_clk(clk_pixel),
+        .I_rst_n(game_rst_n),
+        .I_a(I_enc2_a),
+        .I_b(I_enc2_b),
+        .O_tick_cw(enc2_tick_cw),
+        .O_tick_ccw(enc2_tick_ccw)
+    );
+
     game #(
         .GAME_W_BITS(GAME_W_BITS),
         .GAME_H_BITS(GAME_H_BITS),
@@ -64,13 +92,20 @@ module top (
         .PADDLE_RESET_Y((360 - 48) << 5),
         .PADDLE_BORDER_LEFT(PADDLE_LEFT_X + (16 << 5)),
         .PADDLE_BORDER_RIGHT(PADDLE_RIGHT_X),
+        .SCORE_BORDER_LEFT(10 << 5),
+        .SCORE_BORDER_RIGHT(1270 << 5),
         .PADDLE_SIZE(96 << 5),
+        .PADDLE_SPEED(18 << 5),
         .BORDER_TOP(10 << 5),
         .BORDER_BOTTOM(710 << 5)
     ) game_inst (
         .I_clk(clk_pixel),
-        .I_rst_n(sys_rst_n),
+        .I_rst_n(game_rst_n),
         .I_start(vsync), // start processing frame when nothing is drawn
+        .I_enc1_cw(enc1_tick_cw),
+        .I_enc1_ccw(enc1_tick_ccw),
+        .I_enc2_cw(enc2_tick_cw),
+        .I_enc2_ccw(enc2_tick_ccw),
         .O_paddle_left_y(paddle_left_y),
         .O_paddle_right_y(paddle_right_y),
         .O_ball_x(ball_x),
