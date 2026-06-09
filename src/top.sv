@@ -48,6 +48,13 @@ module top (
     defparam u_clkdiv.DIV_MODE = "5";
     defparam u_clkdiv.GSREN = "false";
 
+    reg [15:0] enc_sample;
+    wire enc_sample_en = (enc_sample == 16'b0); // ~1 ms
+    always_ff @(posedge clk_pixel or negedge sys_rst_n) begin
+        if (!sys_rst_n) enc_sample <= 16'b0;
+        else enc_sample <= enc_sample + 1'b1;
+    end
+
     
     wire [GAME_W_BITS-1:0] ball_x;
     wire [GAME_H_BITS-1:0] ball_y;
@@ -65,6 +72,7 @@ module top (
     rotary_encoder enc1_inst (
         .I_clk(clk_pixel),
         .I_rst_n(game_rst_n),
+        .I_sample_en(enc_sample_en),
         .I_a(I_enc1_a),
         .I_b(I_enc1_b),
         .O_tick_cw(enc1_tick_cw),
@@ -76,6 +84,7 @@ module top (
     rotary_encoder enc2_inst (
         .I_clk(clk_pixel),
         .I_rst_n(game_rst_n),
+        .I_sample_en(enc_sample_en),
         .I_a(I_enc2_a),
         .I_b(I_enc2_b),
         .O_tick_cw(enc2_tick_cw),
@@ -93,7 +102,7 @@ module top (
         .PADDLE_BORDER_LEFT(PADDLE_LEFT_X + (16 << 5)),
         .PADDLE_BORDER_RIGHT(PADDLE_RIGHT_X),
         .SCORE_BORDER_LEFT(10 << 5),
-        .SCORE_BORDER_RIGHT(1270 << 5),
+        .SCORE_BORDER_RIGHT(1238 << 5),
         .PADDLE_SIZE(96 << 5),
         .PADDLE_SPEED(18 << 5),
         .BORDER_TOP(10 << 5),

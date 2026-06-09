@@ -118,13 +118,9 @@ module game #(
                     marked_for_score <= 1'b0;
                     ball_init_dir_x <= ~ball_init_dir_x;
 
-                    // Fixed: Just add the random bits directly. 
-                    // rand_gen[7:3] adds 0 to 31 sub-pixels to Y (~1 pixel variance)
-                    // rand_gen[2:0] adds 0 to 7 sub-pixels to X (~0.2 pixel variance)
                     current_abs_vel_y <= BASE_VEL_Y + rand_gen[7:3];
                     current_abs_vel_x <= BASE_VEL_X + rand_gen[2:0];
 
-                    // Apply starting direction safely
                     if (ball_init_dir_x) 
                         ball_vel_x <= BASE_VEL_X + rand_gen[2:0];
                     else 
@@ -145,6 +141,7 @@ module game #(
                 IDLE_WAIT: begin
                     if(I_start) begin
                         state <= MOVE;
+                        O_paddle_left_y <= next_paddle_left_y;
                         O_paddle_right_y <= next_paddle_right_y;
                     end
                 end
@@ -166,7 +163,7 @@ module game #(
 
                     // Score
                     // also chack if ball x went negative
-                    if (O_ball_x <= SCORE_BORDER_LEFT || O_ball_x[GAME_W_BITS-1]) begin
+                    if (O_ball_x <= SCORE_BORDER_LEFT || O_ball_x >= (SCORE_BORDER_RIGHT+1000)) begin
                         right_should_score <= 1'b1;
                         state <= NEW_ROUND;
                     end 

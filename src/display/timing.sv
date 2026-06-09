@@ -4,8 +4,8 @@ module timing (
     output wire O_hsync,
     output wire O_vsync,
     output wire O_de,
-    output wire [11:0] O_x,
-    output wire [11:0] O_y
+    output wire [10:0] O_x,
+    output wire [10:0] O_y
 );
 
     // 1280x720 @ 60Hz timing parameters
@@ -58,7 +58,7 @@ module timing (
     assign O_vsync = (v_cnt >= V_ACTIVE + V_FP && v_cnt < V_ACTIVE + V_FP + V_SYNC);
     assign O_de    = (h_cnt < H_ACTIVE && v_cnt < V_ACTIVE);
 
-    assign O_x = h_cnt;
-    assign O_y = v_cnt;
+    assign O_x = h_cnt[10:0];
+    assign O_y = v_cnt[10:0];
 
 endmodule
